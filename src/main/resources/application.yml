@@ -28,6 +28,8 @@ spring:
 #    # serve para debugar o que esta acontecendo no gateway
 #    org.springframework.cloud.gateway: TRACE
 #    reactor.netty: DEBUG
-
+jwt:
+  secret: "zB6p9WvR4tN2uQ5x8y/A?D(G+KbPeShV"
+  expiration: 3600000  # 1 hora em ms
 server:
   port: 8080
