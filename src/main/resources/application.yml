@@ -1,3 +1,10 @@
 spring:
   application:
-    name: apigateway
+    name: api-gateway
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+server:
+  port: 8080
