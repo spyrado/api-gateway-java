@@ -32,7 +32,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     if (PUBLIC_ROUTES.stream().anyMatch(path::startsWith)) {
       return chain.filter(exchange);
     }
-    exchange.getRequest().getPath().value();
+
     // busca o token no header Authorization
     String authHeader = exchange.getRequest()
         .getHeaders()
