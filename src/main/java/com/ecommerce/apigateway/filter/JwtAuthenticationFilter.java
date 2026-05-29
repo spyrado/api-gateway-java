@@ -1,6 +1,7 @@
 package com.ecommerce.apigateway.filter;
 
 import com.ecommerce.apigateway.service.JwtService;
+import com.ecommerce.apigateway.service.TokenBlacklistService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +21,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
   private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
   private final JwtService jwtService;
+  private final TokenBlacklistService tokenBlacklistService;
 
   // rotas públicas que não precisam de autenticação
   private static final List<String> PUBLIC_ROUTES = List.of("/auth/login");
@@ -50,8 +52,30 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
       return unauthorized(exchange);
     }
 
-    log.info("Token JWT válido - usuário: {}", jwtService.extractUsername(token));
-    return chain.filter(exchange);
+    /**
+     * Verifica se o token JWT está na blacklist antes de permitir
+     * que a requisição continue no gateway.
+     *
+     * Fluxo:
+     * 1. Consulta o Redis para verificar se o token foi revogado
+     * 2. Se estiver na blacklist:
+     *    - registra um warning no log
+     *    - retorna HTTP 401 Unauthorized
+     * 3. Se não estiver:
+     *    - continua o fluxo normal da requisição
+     *
+     * Reactive Flow:
+     * - isBlacklisted(token) retorna um Mono<Boolean>
+     * - flatMap processa o resultado de forma assíncrona
+     */
+    return tokenBlacklistService.isBlacklisted(token)
+        .flatMap(isBlacklisted -> {
+          if (isBlacklisted) {
+            log.warn("Token na blacklist: {}", path);
+            return unauthorized(exchange);
+          }
+          return chain.filter((exchange));
+        });
   }
 
   private Mono<Void> unauthorized(ServerWebExchange exchange) {

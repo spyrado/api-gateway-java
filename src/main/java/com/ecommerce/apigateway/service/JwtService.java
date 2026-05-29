@@ -43,6 +43,22 @@ public class JwtService {
         .getSubject();
   }
 
+  public Date extractExpiration(String token) {
+    SecretKey key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+
+    return Jwts.parser()
+        .verifyWith(key)
+        .build()
+        .parseSignedClaims(token)
+        .getPayload()
+        .getExpiration();
+  }
+
+  public Long getRemainingTtl(String token) {
+    Date expiration =  extractExpiration(token);
+    return expiration.getTime() - System.currentTimeMillis();
+  }
+
   // valida se o token é válido
   public boolean isTokenValid(String token) {
     try {
